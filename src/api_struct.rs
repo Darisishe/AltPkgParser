@@ -1,11 +1,11 @@
 use serde::Deserialize;
-use crate::data;
+use crate::packages_handler;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // describes the response of "/export/branch_binary_packages/"
 
 #[derive(Deserialize, Debug)]
-pub struct BranchPkgsRaw {
+pub struct BranchPkgsResponse {
     pub packages: Vec<PkgRaw>,
 
     // unused
@@ -15,7 +15,7 @@ pub struct BranchPkgsRaw {
 
 #[derive(Deserialize, Debug)]
 pub struct PkgRaw {
-    pub arch: data::Architecture,
+    pub arch: packages_handler::Architecture,
     pub name: String,
     pub version: String,
     pub release: String,
