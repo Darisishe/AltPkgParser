@@ -1,5 +1,3 @@
-use std::arch;
-
 use altpkgparser::fetch;
 
 #[tokio::main]
