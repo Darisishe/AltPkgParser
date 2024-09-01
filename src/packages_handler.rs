@@ -6,7 +6,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::api_struct::{BranchPkgsResponse, PkgRaw};
+use crate::api_struct::PkgRaw;
 
 #[derive(Debug)]
 pub struct BranchPkgsHandler {
@@ -20,20 +20,20 @@ impl BranchPkgsHandler {
         for pkg in packages {
             arch_packages.entry(pkg.arch).or_default().insert(PkgEntry {
                 name: pkg.name,
-                version: pkg.version,
-                release: pkg.release,
+                rpm_version: pkg.epoch.to_string() + ":" + &pkg.version + "-" + &pkg.release,
             });
         }
 
         BranchPkgsHandler { arch_packages }
     }
-
+    
+    /// Iterator over all available architectures for this branch
     pub fn architectures(&self) -> impl Iterator<Item = &Architecture> {
         self.arch_packages.keys()
     }
 
     /// Returns packages for a given arch
-    pub fn get_packages(&self, arch: &Architecture) -> Option<impl Iterator<Item = &PkgEntry>> {
+    pub fn packages_iter(&self, arch: &Architecture) -> Option<impl Iterator<Item = &PkgEntry>> {
         self.arch_packages.get(arch).map(|lst| lst.iter())
     }
 
@@ -60,14 +60,22 @@ impl BranchPkgsHandler {
             false
         }
     }
+
+    pub fn get_package(&self, arch: &Architecture, pkg_name: &str) -> Option<&PkgEntry> {
+        if let Some(pkgs_set) = self.arch_packages.get(arch) {
+            pkgs_set.get(pkg_name)
+        } else {
+            None
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
 #[derive(Serialize, Debug, Clone)]
 pub struct PkgEntry {
     pub name: String,
-    pub version: String,
-    pub release: String,
+    // stores (epoch, version, release) in e:v-r format
+    pub rpm_version: String,
 }
 
 impl PartialEq for PkgEntry {

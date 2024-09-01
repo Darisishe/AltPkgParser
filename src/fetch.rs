@@ -1,5 +1,5 @@
 use crate::api_struct;
-use crate::packages_handler::{Architecture, BranchPkgsHandler};
+use crate::packages_handler::BranchPkgsHandler;
 use reqwest::Result;
 
 const PKGS_URL: &str = "https://rdb.altlinux.org/api/export/branch_binary_packages/";

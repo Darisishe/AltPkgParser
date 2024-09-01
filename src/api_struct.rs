@@ -17,11 +17,11 @@ pub struct BranchPkgsResponse {
 pub struct PkgRaw {
     pub arch: packages_handler::Architecture,
     pub name: String,
+    pub epoch: i32,
     pub version: String,
     pub release: String,
 
     // unused
-    epoch: i32,
     disttag: String,
     buildtime: usize,
     source: String,

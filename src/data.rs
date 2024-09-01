@@ -17,9 +17,7 @@ pub struct NewerInSisyphusPkgs {
 pub struct VersionedPkg {
     pub name: String,
 
-    pub sisyphus_version: String,
-    pub sisyphus_release: String,
-
-    pub p10_version: String,
-    pub p10_release: String,
+    // uses "e:v-r" format
+    pub sisyphus_rpm_version: String,
+    pub p10_rpm_version: String,
 }
