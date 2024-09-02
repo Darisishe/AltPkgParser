@@ -4,13 +4,13 @@ use serde::Serialize;
 #[derive(Serialize)]
 pub struct BranchExclusivePkgs {
     pub arch: Architecture,
-    pub packages: Vec<PkgEntry>
+    pub packages: Vec<PkgEntry>,
 }
 
 #[derive(Serialize)]
 pub struct NewerInSisyphusPkgs {
     pub arch: Architecture,
-    pub packages: Vec<VersionedPkg>
+    pub packages: Vec<VersionedPkg>,
 }
 
 #[derive(Serialize)]

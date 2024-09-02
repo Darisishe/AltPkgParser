@@ -26,7 +26,7 @@ impl BranchPkgsHandler {
 
         BranchPkgsHandler { arch_packages }
     }
-    
+
     /// Iterator over all available architectures for this branch
     pub fn architectures(&self) -> impl Iterator<Item = &Architecture> {
         self.arch_packages.keys()
@@ -37,7 +37,6 @@ impl BranchPkgsHandler {
         self.arch_packages.get(arch).map(|lst| lst.iter())
     }
 
-    
     /// Checks whether package present for a given arch
     /// # Example
     /// ```
@@ -61,6 +60,18 @@ impl BranchPkgsHandler {
         }
     }
 
+    /// Returns package with a given name and arch
+    /// # Example
+    /// ```
+    /// # use altpkgparser::fetch::fetch_branch_packages;
+    /// # use altpkgparser::packages_handler::Architecture;
+    /// #
+    /// # tokio_test::block_on(async {
+    /// let handler = fetch_branch_packages("sisyphus").await.unwrap();
+    /// assert!(handler.get_package(&&Architecture("x86_64".to_owned()), "gcc11").is_some());
+    /// assert!(handler.get_package(&&Architecture("aarch64".to_owned()), "grep").is_some());
+    /// # });
+    /// ```
     pub fn get_package(&self, arch: &Architecture, pkg_name: &str) -> Option<&PkgEntry> {
         if let Some(pkgs_set) = self.arch_packages.get(arch) {
             pkgs_set.get(pkg_name)

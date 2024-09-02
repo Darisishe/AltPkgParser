@@ -4,7 +4,6 @@ use reqwest::Result;
 
 const PKGS_URL: &str = "https://rdb.altlinux.org/api/export/branch_binary_packages/";
 
-
 /// Gets packages list by Branch name
 ///
 /// # Example
@@ -22,10 +21,11 @@ const PKGS_URL: &str = "https://rdb.altlinux.org/api/export/branch_binary_packag
 /// # });
 /// ```
 pub async fn fetch_branch_packages(branch_name: &str) -> Result<BranchPkgsHandler> {
-    let branch_pkgs: api_struct::BranchPkgsResponse = reqwest::get(PKGS_URL.to_owned() + branch_name)
-        .await?
-        .json()
-        .await?;
+    let branch_pkgs: api_struct::BranchPkgsResponse =
+        reqwest::get(PKGS_URL.to_owned() + branch_name)
+            .await?
+            .json()
+            .await?;
 
     Ok(BranchPkgsHandler::from_raw(branch_pkgs.packages))
 }

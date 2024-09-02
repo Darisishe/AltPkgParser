@@ -1,5 +1,5 @@
-use serde::Deserialize;
 use crate::packages_handler;
+use serde::Deserialize;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // describes the response of "/export/branch_binary_packages/"
@@ -26,4 +26,3 @@ pub struct PkgRaw {
     buildtime: usize,
     source: String,
 }
-
