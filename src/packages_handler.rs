@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::api_struct::PkgRaw;
 
+/// Data Structure for сonvenient working with packages grouped by architecture
 #[derive(Debug)]
 pub struct BranchPkgsHandler {
     arch_packages: HashMap<Architecture, HashSet<PkgEntry>>,
@@ -82,6 +83,7 @@ impl BranchPkgsHandler {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
+/// Contains just a package name and evr
 #[derive(Serialize, Debug, Clone)]
 pub struct PkgEntry {
     pub name: String,
@@ -111,7 +113,7 @@ impl Borrow<str> for PkgEntry {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-// aliases Arch as String
+/// aliases Arch as String
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Hash, Clone)]
 #[serde(transparent)]
 pub struct Architecture(pub String);

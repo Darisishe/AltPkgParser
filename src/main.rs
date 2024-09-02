@@ -77,6 +77,7 @@ fn get_newer_in_sisyphus(
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
+/// Command line arguments
 #[derive(StructOpt, Debug)]
 #[structopt()]
 struct Opts {
@@ -85,6 +86,7 @@ struct Opts {
     verbose: usize,
 }
 
+/// Configures simple stderr logger
 fn setup_logger() {
     let opts = Opts::from_args();
     stderrlog::new()
@@ -95,6 +97,7 @@ fn setup_logger() {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
+/// Requests for p10 and sisyphus packages (in parallel) from API and build Handlers
 async fn request_packages() -> Result<(BranchPkgsHandler, BranchPkgsHandler)> {
     // process data in parallel for better performance
     let p10_future = task::spawn(fetch_branch_packages(P10_BRANCH));
@@ -108,6 +111,7 @@ async fn request_packages() -> Result<(BranchPkgsHandler, BranchPkgsHandler)> {
     Ok((p10_packages, sisyphus_packages))
 }
 
+/// All CLI work done here
 async fn compare_branches_packages() -> Result<()> {
     info!("Sending requests for branches packages to API...");
     let (p10_packages, sisyphus_packages) = request_packages()

@@ -2,7 +2,7 @@ use crate::packages_handler;
 use serde::Deserialize;
 
 /////////////////////////////////////////////////////////////////////////////////////////
-// describes the response of "/export/branch_binary_packages/"
+/// describes the response of "/export/branch_binary_packages/"
 
 #[derive(Deserialize, Debug)]
 pub struct BranchPkgsResponse {
@@ -13,6 +13,7 @@ pub struct BranchPkgsResponse {
     length: usize,
 }
 
+/// Contains all data responsed by API
 #[derive(Deserialize, Debug)]
 pub struct PkgRaw {
     pub arch: packages_handler::Architecture,
