@@ -60,7 +60,7 @@ And produces output JSON according to the following model:
 
 `"newer_in_sisyphus"` - contains packages for each architecture (that sisyphus supports). Each package is described by it's name and `rpm`-versions in both branches.
 
-`"p10_exclusive"` - all packages that are only available in p10 (for each architecture that p10 supports). Each package is described by it's name and `rpm`-versions in p10.
+`"p10_exclusive"` - all packages that are only available in p10 (for each architecture that p10 supports). Each package is described by it's name and `rpm`-version in p10.
 
 `"sisyphus_exclusive"` - same as `"p10_exclusive"`
 
