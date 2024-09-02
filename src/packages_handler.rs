@@ -15,10 +15,11 @@ pub struct BranchPkgsHandler {
 }
 
 impl BranchPkgsHandler {
-    /// builds Handler using JSON array from "/export/branch_binary_packages/"
+    /// Builds Handler using JSON array from "/export/branch_binary_packages/"
     pub(crate) fn from_raw(packages: Vec<PkgRaw>) -> BranchPkgsHandler {
         let mut arch_packages: HashMap<_, HashSet<_>> = HashMap::new();
         for pkg in packages {
+            // insert package to the corresponding arch's set
             arch_packages.entry(pkg.arch).or_default().insert(PkgEntry {
                 name: pkg.name,
                 rpm_version: pkg.epoch.to_string() + ":" + &pkg.version + "-" + &pkg.release,
@@ -91,6 +92,7 @@ pub struct PkgEntry {
     pub rpm_version: String,
 }
 
+// Implement PartialEq, Eq and Hash in a way, that only name field will be used as identifier
 impl PartialEq for PkgEntry {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name
@@ -105,7 +107,7 @@ impl Hash for PkgEntry {
     }
 }
 
-// implementing this trait, so we can use package name as HashSet key
+// Implementing this trait, so we can use package name as HashSet key
 impl Borrow<str> for PkgEntry {
     fn borrow(&self) -> &str {
         &self.name
@@ -113,7 +115,7 @@ impl Borrow<str> for PkgEntry {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-/// aliases Arch as String
+/// Aliases Arch as String
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Hash, Clone)]
 #[serde(transparent)]
 pub struct Architecture(pub String);

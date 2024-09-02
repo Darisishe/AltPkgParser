@@ -2,8 +2,7 @@ use crate::packages_handler;
 use serde::Deserialize;
 
 /////////////////////////////////////////////////////////////////////////////////////////
-/// describes the response of "/export/branch_binary_packages/"
-
+/// Describes the response of "/export/branch_binary_packages/"
 #[derive(Deserialize, Debug)]
 pub struct BranchPkgsResponse {
     pub packages: Vec<PkgRaw>,

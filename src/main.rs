@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use log::*;
 use rpm::rpm_evr_compare;
-use serde_json::{json, to_string_pretty};
+use serde_json::{json, to_string_pretty, to_writer_pretty};
 use structopt::StructOpt;
 use tokio_test::task;
 
@@ -103,10 +103,10 @@ async fn request_packages() -> Result<(BranchPkgsHandler, BranchPkgsHandler)> {
     let p10_future = task::spawn(fetch_branch_packages(P10_BRANCH));
     let sisyphus_future = task::spawn(fetch_branch_packages(SISYPHUS_BRANCH));
 
+    // wait for fetched data
     let (p10_packages, sisyphus_packages) = tokio::join!(p10_future, sisyphus_future);
 
-    let p10_packages = p10_packages?;
-    let sisyphus_packages = sisyphus_packages?;
+    let (p10_packages, sisyphus_packages) = (p10_packages?, sisyphus_packages?);
 
     Ok((p10_packages, sisyphus_packages))
 }
@@ -129,7 +129,7 @@ async fn compare_branches_packages() -> Result<()> {
         sisyphus_packages.architectures().collect::<Vec<_>>()
     );
 
-    info!("proccessing packages...");
+    info!("Proccessing packages...");
     let p10_exclusive = extract_exclusive(&p10_packages, &sisyphus_packages);
     let sisyphus_exclusive = extract_exclusive(&sisyphus_packages, &p10_packages);
     let newer_in_sisyphus = get_newer_in_sisyphus(&sisyphus_packages, &p10_packages);
@@ -140,20 +140,16 @@ async fn compare_branches_packages() -> Result<()> {
         "sisyphus_exclusive": sisyphus_exclusive,
         "newer_in_sisyphus": newer_in_sisyphus
     });
+    to_writer_pretty(std::io::stdout(), &json_output).context("Failed to produce output JSON")?;
 
-    println!(
-        "{}",
-        to_string_pretty(&json_output).context("Failed to produce output JSON")?
-    );
     info!("All done!");
-
     Ok(())
 }
 
 #[tokio::main]
 async fn main() {
     setup_logger();
-    
+
     if let Err(err) = compare_branches_packages().await {
         error!("{:#}", err);
         std::process::exit(1);
