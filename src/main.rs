@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use log::*;
 use rpm::rpm_evr_compare;
-use serde_json::{json, to_string_pretty, to_writer_pretty};
+use serde_json::{json, to_writer_pretty};
 use structopt::StructOpt;
 use tokio_test::task;
 
