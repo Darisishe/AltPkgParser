@@ -1,4 +1,6 @@
-use anyhow::{Context, Result};
+use std::collections::HashSet;
+
+use anyhow::{bail, Context, Result};
 use log::*;
 use rpm::rpm_evr_compare;
 use serde_json::{json, to_writer_pretty};
@@ -9,6 +11,11 @@ use altpkgparser::{fetch::fetch_branch_packages, packages_handler::BranchPkgsHan
 
 mod data;
 use data::{BranchExclusivePkgs, NewerInTargetPkgs, VersionedPkg};
+
+// TODO: Maybe should replace it by getting available branches from API
+// Didn't find suitable request: /export/branch_tree/ responce is too large
+// and contains some branches, that /export/branch_binary_packages/ doesn't support
+const AVAILABLE_BRANCHES: &[&str] = &["p9", "p10", "p11", "sisyphus"];
 
 //////////////////////////////////////////////////////////////////////////////////////
 /// Gets packages from branch_pkgs, that's not present in other
@@ -82,7 +89,7 @@ struct Opts {
     #[structopt(short = "t", long = "target", default_value = "sisyphus")]
     target_branch: String,
 
-    /// Secondary branch 
+    /// Secondary branch
     #[structopt(short = "s", long = "secondary", default_value = "p10")]
     secondary_branch: String,
 
@@ -102,7 +109,10 @@ fn setup_logger(verbose: usize) {
 
 //////////////////////////////////////////////////////////////////////////////////////
 /// Requests for Target's and Secondary's packages (in parallel) from API and build Handlers
-async fn request_packages(target_branch: &str, secondary_branch: &str) -> Result<(BranchPkgsHandler, BranchPkgsHandler)> {
+async fn request_packages(
+    target_branch: &str,
+    secondary_branch: &str,
+) -> Result<(BranchPkgsHandler, BranchPkgsHandler)> {
     // process data in parallel for better performance
     let target_future = task::spawn(fetch_branch_packages(target_branch));
     let secondary_future = task::spawn(fetch_branch_packages(secondary_branch));
@@ -110,14 +120,35 @@ async fn request_packages(target_branch: &str, secondary_branch: &str) -> Result
     // wait for fetched data
     let (target_packages, secondary_packages) = tokio::join!(target_future, secondary_future);
 
-    let (target_packages, secondary_packages)  = (target_packages?, secondary_packages?);
+    let (target_packages, secondary_packages) = (target_packages?, secondary_packages?);
 
     Ok((target_packages, secondary_packages))
 }
 
+/// Checks if all Branches exists
+fn branches_existance_check(branches_names: &[&str]) -> Result<()> {
+    for &branch_name in branches_names {
+        if !AVAILABLE_BRANCHES.contains(&branch_name) {
+            bail!("No such branch: \"{}\"", branch_name);
+        }
+    }
+
+    Ok(())
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
 /// All CLI work done here
 async fn compare_branches_packages(target_branch: &str, secondary_branch: &str) -> Result<()> {
-    info!("Sending requests for {} and {} branches packages to API...", target_branch, secondary_branch);
+    info!(
+        "Existence check for \"{}\" and \"{}\" names...",
+        target_branch, secondary_branch
+    );
+    branches_existance_check(&[target_branch, secondary_branch])?;
+
+    info!(
+        "Sending requests for {} and {} branches packages to API...",
+        target_branch, secondary_branch
+    );
     let (target_packages, secondary_packages) = request_packages(target_branch, secondary_branch)
         .await
         .context("Failed to request packages")?;
