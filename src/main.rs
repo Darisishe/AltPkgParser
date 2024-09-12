@@ -1,4 +1,4 @@
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result};
 use log::*;
 use rpm::rpm_evr_compare;
 use serde_json::{json, to_writer_pretty};
@@ -6,17 +6,12 @@ use structopt::StructOpt;
 use tokio_test::task;
 
 use altpkgparser::{
-    fetch::{fetch_branch_archs, fetch_branch_packages},
+    fetch::fetch_branch_packages,
     packages_handler::{Architecture, BranchPkgsHandler},
 };
 
 mod data;
 use data::{BranchExclusivePkgs, NewerInTargetPkgs, VersionedPkg};
-
-// TODO: Maybe should replace it by getting available branches from API
-// Didn't find suitable request: /export/branch_tree/ responce is too large
-// and contains some branches, that /export/branch_binary_packages/ doesn't support
-const AVAILABLE_BRANCHES: &[&str] = &["p9", "p10", "p11", "sisyphus"];
 
 //////////////////////////////////////////////////////////////////////////////////////
 /// Gets packages from branch_pkgs, that's not present in other
@@ -104,95 +99,25 @@ async fn request_packages(
     Ok((target_packages, secondary_packages))
 }
 
-/// Requests for Target's and Secondary's archs from API
-async fn request_archs(
-    target_branch: &str,
-    secondary_branch: &str,
-) -> Result<(Vec<Architecture>, Vec<Architecture>)> {
-    // Just join without spawning new task, because responce is small
-    let (target_archs, secondary_archs) = tokio::join!(
-        fetch_branch_archs(target_branch),
-        fetch_branch_archs(secondary_branch)
-    );
-
-    let target_archs = target_archs
-        .with_context(|| format!("Failed to request {} architectures", target_branch))?;
-    let secondary_archs = secondary_archs
-        .with_context(|| format!("Failed to request {} architectures", secondary_branch))?;
-
-    Ok((target_archs, secondary_archs))
-}
-
 //////////////////////////////////////////////////////////////////////////////////////
-/// Returns a error if some branch is invalid
-fn branches_existance_check(branches_names: &[&str]) -> Result<()> {
-    for &branch_name in branches_names {
-        if !AVAILABLE_BRANCHES.contains(&branch_name) {
-            bail!("No such branch: \"{}\"", branch_name);
-        }
-    }
-
-    Ok(())
-}
-
-/// Check if both branches supports given arch (otherwise return error)
-async fn arch_presence_check(
-    target_branch: &str,
-    secondary_branch: &str,
-    arch: &Architecture,
-) -> Result<()> {
-    let (target_archs, secondary_archs) = request_archs(target_branch, secondary_branch).await?;
-    if !target_archs.contains(arch) {
-        bail!(
-            "{} branch doesn't support {} architecture",
-            target_branch,
-            arch.0
-        );
-    }
-    if !secondary_archs.contains(arch) {
-        bail!(
-            "{} branch doesn't support {} architecture",
-            secondary_branch,
-            arch.0
-        );
-    }
-
-    Ok(())
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-async fn check_input(
-    target_branch: &str,
-    secondary_branch: &str,
-    arch: Option<&Architecture>,
-) -> Result<()> {
-    info!(
-        "Existence check for \"{}\" and \"{}\" names...",
-        target_branch, secondary_branch
-    );
-    branches_existance_check(&[target_branch, secondary_branch])?;
-    if let Some(arch) = arch {
-        info!("Checking whether \"{}\" architecture is present in both branches...", arch.0);
-        arch_presence_check(target_branch, secondary_branch, arch).await?;
-    }
-
-    Ok(())
-}
-
 /// All CLI work done here
 async fn compare_branches_packages(
     target_branch: &str,
     secondary_branch: &str,
     arch: Option<&Architecture>,
 ) -> Result<()> {
-    // Some checking
-    check_input(target_branch, secondary_branch, arch).await?;
-
     // Fetching packages from API
     info!(
-        "Sending requests for {} and {} branches packages to API...",
-        target_branch, secondary_branch
+        "Sending requests for {} and {} branches packages for {} to API...",
+        target_branch,
+        secondary_branch,
+        if let Some(arch) = arch {
+            &arch.0
+        } else {
+            "all architectures"
+        }
     );
+
     let (target_packages, secondary_packages) =
         request_packages(target_branch, secondary_branch, arch).await?;
     info!("Branches packages fetched successfully!");
