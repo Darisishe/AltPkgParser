@@ -1,6 +1,6 @@
 use crate::api_struct;
 use crate::packages_handler::{Architecture, BranchPkgsHandler};
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, bail, Context, Result};
 
 const PKGS_URL: &str = "https://rdb.altlinux.org/api/export/branch_binary_packages/";
 
@@ -58,7 +58,7 @@ pub async fn fetch_branch_packages(
             }
 
             // Some other error
-            Err(anyhow!(err))
+            Err(err).context(text)
         }
     }
 }
