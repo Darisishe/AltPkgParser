@@ -1,7 +1,7 @@
 use std::{
     borrow::Borrow,
     collections::{HashMap, HashSet},
-    hash::Hash,
+    hash::Hash, str::FromStr,
 };
 
 use serde::{Deserialize, Serialize};
@@ -46,7 +46,7 @@ impl BranchPkgsHandler {
     /// # use altpkgparser::packages_handler::Architecture;
     /// #
     /// # tokio_test::block_on(async {
-    /// let handler = fetch_branch_packages("sisyphus").await.unwrap();
+    /// let handler = fetch_branch_packages("sisyphus", None).await.unwrap();
     /// assert!(handler.contains(&&Architecture("x86_64".to_owned()), "gcc11"));
     /// assert!(handler.contains(&&Architecture("aarch64".to_owned()), "gcc11"));
     /// assert!(handler.contains(&&Architecture("aarch64".to_owned()), "grep"));
@@ -69,7 +69,7 @@ impl BranchPkgsHandler {
     /// # use altpkgparser::packages_handler::Architecture;
     /// #
     /// # tokio_test::block_on(async {
-    /// let handler = fetch_branch_packages("sisyphus").await.unwrap();
+    /// let handler = fetch_branch_packages("sisyphus", None).await.unwrap();
     /// assert!(handler.get_package(&&Architecture("x86_64".to_owned()), "gcc11").is_some());
     /// assert!(handler.get_package(&&Architecture("aarch64".to_owned()), "grep").is_some());
     /// # });
@@ -119,3 +119,9 @@ impl Borrow<str> for PkgEntry {
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Hash, Clone)]
 #[serde(transparent)]
 pub struct Architecture(pub String);
+
+impl From<&str> for Architecture {
+    fn from(value: &str) -> Self {
+        Architecture(value.to_string())
+    }
+}

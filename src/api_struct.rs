@@ -26,3 +26,19 @@ pub struct PkgRaw {
     buildtime: usize,
     source: String,
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// describes the response of "/site/all_pkgset_archs"
+
+#[derive(Deserialize, Debug)]
+pub struct BranchArchs {
+    length: usize,
+    pub archs: Vec<ArchData>,
+}
+
+
+#[derive(Deserialize, Debug)]
+pub struct ArchData {
+    pub arch: packages_handler::Architecture,
+    count: usize,
+}
