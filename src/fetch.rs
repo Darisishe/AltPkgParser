@@ -41,12 +41,13 @@ pub async fn fetch_branch_packages(
         Err(err) => {
             let text = response.text().await?;
 
-            // Incorect branch name case
+            // Incorrect branch name
             if text.contains("unknown package set name") {
                 bail!("No such branch: \"{}\"", branch_name);
             }
+
             if let Some(arch) = arch {
-                // Incorrect arch name case
+                // Incorrect arch name
                 if text.contains("Invalid architecture name") {
                     bail!(
                         "{} branch doesn't support \"{}\" architecture",
@@ -55,7 +56,7 @@ pub async fn fetch_branch_packages(
                     );
                 }
             }
-            
+
             // Some other error
             Err(anyhow!(err))
         }

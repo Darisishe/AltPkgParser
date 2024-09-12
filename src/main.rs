@@ -14,7 +14,7 @@ mod data;
 use data::{BranchExclusivePkgs, NewerInTargetPkgs, VersionedPkg};
 
 //////////////////////////////////////////////////////////////////////////////////////
-/// Gets packages from branch_pkgs, that's not present in other
+/// Gets packages from branch_pkgs, that are not present in other
 fn extract_exclusive(
     branch_pkgs: &BranchPkgsHandler,
     other: &BranchPkgsHandler,
@@ -77,6 +77,14 @@ fn get_newer_in_target(
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
+/// Provides context for request result in case of error
+fn provide_context(
+    request_result: Result<BranchPkgsHandler>,
+    branch_name: &str,
+) -> Result<BranchPkgsHandler> {
+    request_result.with_context(|| format!("Failed to request {} packages", branch_name))
+}
+
 /// Requests for Target's and Secondary's packages (in parallel) from API and build Handlers
 async fn request_packages(
     target_branch: &str,
@@ -90,11 +98,8 @@ async fn request_packages(
     // wait for fetched data
     let (target_packages, secondary_packages) = tokio::join!(target_future, secondary_future);
 
-    let target_packages =
-        target_packages.with_context(|| format!("Failed to request {} packages", target_branch))?;
-
-    let secondary_packages = secondary_packages
-        .with_context(|| format!("Failed to request {} packages", secondary_branch))?;
+    let target_packages = provide_context(target_packages, target_branch)?;
+    let secondary_packages = provide_context(secondary_packages, secondary_branch)?;
 
     Ok((target_packages, secondary_packages))
 }
@@ -187,13 +192,13 @@ async fn main() {
     let opts = Opts::from_args();
     setup_logger(opts.verbose);
 
-    if let Err(err) = compare_branches_packages(
+    let comparison_future = compare_branches_packages(
         &opts.target_branch,
         &opts.secondary_branch,
         opts.arch.as_ref(),
-    )
-    .await
-    {
+    );
+
+    if let Err(err) = comparison_future.await {
         error!("{:#}", err);
         std::process::exit(1);
     }

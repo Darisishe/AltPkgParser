@@ -4,7 +4,7 @@ To run the CLI utility just execute the binary and pass command line args.
 
 Example: `cargo run -- -vvv > output.json` will run the program with max verbosity level, for branches `sisyphus` (as target) and `p10` over all architectures and save output to `output.json`.
 
-`Command line arguments description:`
+*Command line arguments description:*
 - `-v` - different levels of logger verbosity (`-v`, `-vv`, `-vvv`)
 - `--target` or `-t` - name of Target branch (the one in which newer packages will be searched), `sisyphus` by default. Example: `--target p9`
 - `--secondary` or `-s` - name of Secondary branch, `p10` by default. Example: `--secondary p11`

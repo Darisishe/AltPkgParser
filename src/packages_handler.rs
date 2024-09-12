@@ -1,7 +1,7 @@
 use std::{
     borrow::Borrow,
     collections::{HashMap, HashSet},
-    hash::Hash
+    hash::Hash,
 };
 
 use serde::{Deserialize, Serialize};
@@ -19,7 +19,7 @@ impl BranchPkgsHandler {
     pub(crate) fn from_raw(packages: Vec<PkgRaw>) -> BranchPkgsHandler {
         let mut arch_packages: HashMap<_, HashSet<_>> = HashMap::new();
         for pkg in packages {
-            // insert package to the corresponding arch's set
+            // Insert package to the corresponding arch's set
             arch_packages.entry(pkg.arch).or_default().insert(PkgEntry {
                 name: pkg.name,
                 rpm_version: pkg.epoch.to_string() + ":" + &pkg.version + "-" + &pkg.release,
