@@ -27,7 +27,7 @@ pub async fn fetch_branch_packages(
 ) -> Result<BranchPkgsHandler> {
     let mut request_url = PKGS_URL.to_owned() + branch_name;
     if let Some(arch) = arch {
-        // concretize for specific architecture
+        // make optimized request for specific architecture
         request_url = request_url + "?arch=" + &arch.0;
     }
 

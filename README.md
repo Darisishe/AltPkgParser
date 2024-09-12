@@ -1,26 +1,36 @@
 # AltPkgParser
 ## How to run
-To run the CLI utility just execute the binary and pass command line args (`-v`, `-vv`, `-vvv`, maybe none) - different levels of logger verbosity.
+To run the CLI utility just execute the binary and pass command line args.
 
-Example: `cargo run -- -vvv > output.json` will run the program with max verbosity level and save output to `output.json`. 
+Example: `cargo run -- -vvv > output.json` will run the program with max verbosity level, for branches `sisyphus` (as target) and `p10` over all architectures and save output to `output.json`.
+
+`Command line arguments description:`
+- `-v` - different levels of logger verbosity (`-v`, `-vv`, `-vvv`)
+- `--target` or `-t` - name of Target branch (the one in which newer packages will be searched), `sisyphus` by default. Example: `--target p9`
+- `--secondary` or `-s` - name of Secondary branch, `p10` by default. Example: `--secondary p11`
+- `--arch` or `-a` - name of architecture for which packages will be processed. By default (no `-a` arg) program will gather information over all architectures. Example `--arch x86-64`
+
+Branch name can be picked from [`p9`, `p10`, `p11`, `sisyphus`].
+
+Example: `cargo run -- -t p9 -s sisyphus -a noarch > output.json` - run silently, with `p9` as Target and `sisyphus` as Secondary, for `noarch` arch.
 
 ## Output JSON format
-CLI compares lists of p10 and sisyphus packages:
-- Finds all packages that are in p10 but not in sisyphus
-- Finds all packages that are in sisyphus but not in p10
-- Finds all packages whose version-release is greater in sisyphus than in p10 (based on `rpm`)
+CLI compares lists of `Target` and `Secondary` packages (if `-arch` provided, program only looks for packages for this architecture):
+- Finds all packages that are in `Target` but not in `Secondary`
+- Finds all packages that are in `Secondary` but not in `Target`
+- Finds all packages whose version-release is greater in `Target` than in `Secondary` (based on `rpm`)
 
 And produces output JSON according to the following model:
 ```json
 {
-  "newer_in_sisyphus": [
+  "newer_in_{target_name}": [
     {
       "arch": "arch_name",
       "packages": [
         {
           "name": "package_name",
-          "p10_rpm_version": "epoch:version-release",
-          "sisyphus_rpm_version": "epoch:version-release"
+          "target_rpm_version": "epoch:version-release",
+          "secondary_rpm_version": "epoch:version-release"
         },
         ...
       ]
@@ -28,7 +38,7 @@ And produces output JSON according to the following model:
     ...
   ],
 
-  "p10_exclusive": [
+  "{target_name}_exclusive": [
     {
       "arch": "arch_name",
       "packages": [
@@ -42,7 +52,7 @@ And produces output JSON according to the following model:
     ...
   ],
 
-  "sisyphus_exclusive": [
+  "{secondary_name}_exclusive": [
     {
       "arch": "arch_name",
       "packages": [
@@ -58,11 +68,11 @@ And produces output JSON according to the following model:
 }
 ```
 
-`"newer_in_sisyphus"` - contains packages for each architecture (that sisyphus supports). Each package is described by it's name and `rpm`-versions in both branches.
+`"newer_in_{target_name}"` - contains packages for each (or only for a given one) architecture (that `Target` branch supports). Each package is described by it's name and `rpm`-versions in both branches.
 
-`"p10_exclusive"` - all packages that are only available in p10 (for each architecture that p10 supports). Each package is described by it's name and `rpm`-version in p10.
+`"{target_name}_exclusive"` - all packages that are only available in `Target` branch. Each package is described by it's name and `rpm`-version in p10.
 
-`"sisyphus_exclusive"` - same as `"p10_exclusive"`
+`"{secondary_name}_exclusive"` - same as `"{target_name}_exclusive"`
 
 ## Project structure
 Crate is splitted into two parts: Library and Binary.

@@ -1,7 +1,7 @@
 use std::{
     borrow::Borrow,
     collections::{HashMap, HashSet},
-    hash::Hash, str::FromStr,
+    hash::Hash
 };
 
 use serde::{Deserialize, Serialize};
@@ -29,7 +29,7 @@ impl BranchPkgsHandler {
         BranchPkgsHandler { arch_packages }
     }
 
-    /// Iterator over all available architectures for this branch
+    /// Iterator over all fetched architectures for this branch
     pub fn architectures(&self) -> impl Iterator<Item = &Architecture> {
         self.arch_packages.keys()
     }

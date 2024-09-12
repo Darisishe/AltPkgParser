@@ -1,5 +1,3 @@
-use std::{collections::HashSet, fmt::format, sync::Arc};
-
 use anyhow::{bail, Context, Result};
 use log::*;
 use rpm::rpm_evr_compare;
@@ -81,37 +79,6 @@ fn get_newer_in_target(
     }
 
     target_newer
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-/// Command line arguments
-#[derive(StructOpt, Debug)]
-#[structopt()]
-struct Opts {
-    /// Target branch (program will extract packages that are newer in Target than in Secondary)
-    #[structopt(short = "t", long = "target", default_value = "sisyphus")]
-    target_branch: String,
-
-    /// Secondary branch
-    #[structopt(short = "s", long = "secondary", default_value = "p10")]
-    secondary_branch: String,
-
-    /// Architecture (optional argument)
-    #[structopt(short = "a", long = "arch", parse(from_str))]
-    arch: Option<Architecture>,
-
-    /// Verbose mode (-v, -vv, -vvv, etc)
-    #[structopt(short = "v", long = "verbose", parse(from_occurrences))]
-    verbose: usize,
-}
-
-/// Configures simple stderr logger
-fn setup_logger(verbose: usize) {
-    stderrlog::new()
-        .verbosity(1 + verbose)
-        .timestamp(stderrlog::Timestamp::Off)
-        .init()
-        .expect("failed to initialize logging");
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -257,6 +224,37 @@ async fn compare_branches_packages(
 
     info!("All done!");
     Ok(())
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+/// Command line arguments
+#[derive(StructOpt, Debug)]
+#[structopt()]
+struct Opts {
+    /// Target branch (program will extract packages that are newer in Target than in Secondary)
+    #[structopt(short = "t", long = "target", default_value = "sisyphus")]
+    target_branch: String,
+
+    /// Secondary branch
+    #[structopt(short = "s", long = "secondary", default_value = "p10")]
+    secondary_branch: String,
+
+    /// Architecture (optional argument)
+    #[structopt(short = "a", long = "arch", parse(from_str))]
+    arch: Option<Architecture>,
+
+    /// Verbose mode (-v, -vv, -vvv, etc)
+    #[structopt(short = "v", long = "verbose", parse(from_occurrences))]
+    verbose: usize,
+}
+
+/// Configures simple stderr logger
+fn setup_logger(verbose: usize) {
+    stderrlog::new()
+        .verbosity(1 + verbose)
+        .timestamp(stderrlog::Timestamp::Off)
+        .init()
+        .expect("failed to initialize logging");
 }
 
 #[tokio::main]
