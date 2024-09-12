@@ -8,10 +8,7 @@ use tokio_test::task;
 use altpkgparser::{fetch::fetch_branch_packages, packages_handler::BranchPkgsHandler};
 
 mod data;
-use data::{BranchExclusivePkgs, NewerInSisyphusPkgs, VersionedPkg};
-
-const P10_BRANCH: &str = "p10";
-const SISYPHUS_BRANCH: &str = "sisyphus";
+use data::{BranchExclusivePkgs, NewerInTargetPkgs, VersionedPkg};
 
 //////////////////////////////////////////////////////////////////////////////////////
 /// Gets packages from branch_pkgs, that's not present in other
@@ -35,30 +32,30 @@ fn extract_exclusive(
     exclusive
 }
 
-/// Finds packages whose version-release is greater in sisyphus than in p10 based on rpm
+/// Finds packages whose version-release is greater in Target branch than in Secondary based on rpm
 /// (skips packages that are not in neither Branch)
-fn get_newer_in_sisyphus(
-    sisyphus_packages: &BranchPkgsHandler,
-    p10_packages: &BranchPkgsHandler,
-) -> Vec<NewerInSisyphusPkgs> {
-    let mut sisyphus_newer = Vec::new();
-    for arch in sisyphus_packages.architectures() {
-        // list of sisyphus packages for given arch
-        let packages = match sisyphus_packages.packages_iter(arch) {
+fn get_newer_in_target(
+    target_packages: &BranchPkgsHandler,
+    secondary_packages: &BranchPkgsHandler,
+) -> Vec<NewerInTargetPkgs> {
+    let mut target_newer = Vec::new();
+    for arch in target_packages.architectures() {
+        // list of target packages for given arch
+        let packages = match target_packages.packages_iter(arch) {
             Some(packages) => packages,
             None => continue,
         };
 
-        let newer_pkgs = packages.filter_map(|sisyphus_pkg| {
-            // first check if package present in p10
-            match p10_packages.get_package(arch, &sisyphus_pkg.name) {
-                Some(p10_pkg) => {
-                    // check if sisyphus version is greater
-                    match rpm_evr_compare(&sisyphus_pkg.rpm_version, &p10_pkg.rpm_version) {
+        let newer_pkgs = packages.filter_map(|target_pkg| {
+            // first check if package present in Secondary
+            match secondary_packages.get_package(arch, &target_pkg.name) {
+                Some(sec_pkg) => {
+                    // check if Target version is greater
+                    match rpm_evr_compare(&target_pkg.rpm_version, &sec_pkg.rpm_version) {
                         std::cmp::Ordering::Greater => Some(VersionedPkg {
-                            name: sisyphus_pkg.name.clone(),
-                            sisyphus_rpm_version: sisyphus_pkg.rpm_version.clone(),
-                            p10_rpm_version: p10_pkg.rpm_version.clone(),
+                            name: target_pkg.name.clone(),
+                            target_rpm_version: target_pkg.rpm_version.clone(),
+                            secondary_rpm_version: sec_pkg.rpm_version.clone(),
                         }),
                         _ => None,
                     }
@@ -67,13 +64,13 @@ fn get_newer_in_sisyphus(
             }
         });
 
-        sisyphus_newer.push(NewerInSisyphusPkgs {
+        target_newer.push(NewerInTargetPkgs {
             arch: arch.clone(),
             packages: newer_pkgs.collect(),
         })
     }
 
-    sisyphus_newer
+    target_newer
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -81,64 +78,71 @@ fn get_newer_in_sisyphus(
 #[derive(StructOpt, Debug)]
 #[structopt()]
 struct Opts {
+    /// Target branch (program will extract packages that are newer in Target than in Secondary)
+    #[structopt(short = "t", long = "target", default_value = "sisyphus")]
+    target_branch: String,
+
+    /// Secondary branch 
+    #[structopt(short = "s", long = "secondary", default_value = "p10")]
+    secondary_branch: String,
+
     /// Verbose mode (-v, -vv, -vvv, etc)
     #[structopt(short = "v", long = "verbose", parse(from_occurrences))]
     verbose: usize,
 }
 
 /// Configures simple stderr logger
-fn setup_logger() {
-    let opts = Opts::from_args();
+fn setup_logger(verbose: usize) {
     stderrlog::new()
-        .verbosity(1 + opts.verbose)
+        .verbosity(1 + verbose)
         .timestamp(stderrlog::Timestamp::Off)
         .init()
         .expect("failed to initialize logging");
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-/// Requests for p10 and sisyphus packages (in parallel) from API and build Handlers
-async fn request_packages() -> Result<(BranchPkgsHandler, BranchPkgsHandler)> {
+/// Requests for Target's and Secondary's packages (in parallel) from API and build Handlers
+async fn request_packages(target_branch: &str, secondary_branch: &str) -> Result<(BranchPkgsHandler, BranchPkgsHandler)> {
     // process data in parallel for better performance
-    let p10_future = task::spawn(fetch_branch_packages(P10_BRANCH));
-    let sisyphus_future = task::spawn(fetch_branch_packages(SISYPHUS_BRANCH));
+    let target_future = task::spawn(fetch_branch_packages(target_branch));
+    let secondary_future = task::spawn(fetch_branch_packages(secondary_branch));
 
     // wait for fetched data
-    let (p10_packages, sisyphus_packages) = tokio::join!(p10_future, sisyphus_future);
+    let (target_packages, secondary_packages) = tokio::join!(target_future, secondary_future);
 
-    let (p10_packages, sisyphus_packages) = (p10_packages?, sisyphus_packages?);
+    let (target_packages, secondary_packages)  = (target_packages?, secondary_packages?);
 
-    Ok((p10_packages, sisyphus_packages))
+    Ok((target_packages, secondary_packages))
 }
 
 /// All CLI work done here
-async fn compare_branches_packages() -> Result<()> {
-    info!("Sending requests for branches packages to API...");
-    let (p10_packages, sisyphus_packages) = request_packages()
+async fn compare_branches_packages(target_branch: &str, secondary_branch: &str) -> Result<()> {
+    info!("Sending requests for {} and {} branches packages to API...", target_branch, secondary_branch);
+    let (target_packages, secondary_packages) = request_packages(target_branch, secondary_branch)
         .await
         .context("Failed to request packages")?;
     info!("Branches packages fetched successfully!");
     trace!(
         "{} architectures: {:?}",
-        P10_BRANCH,
-        p10_packages.architectures().collect::<Vec<_>>()
+        target_branch,
+        target_packages.architectures().collect::<Vec<_>>()
     );
     trace!(
         "{} architectures: {:?}",
-        SISYPHUS_BRANCH,
-        sisyphus_packages.architectures().collect::<Vec<_>>()
+        secondary_branch,
+        secondary_packages.architectures().collect::<Vec<_>>()
     );
 
     info!("Proccessing packages...");
-    let p10_exclusive = extract_exclusive(&p10_packages, &sisyphus_packages);
-    let sisyphus_exclusive = extract_exclusive(&sisyphus_packages, &p10_packages);
-    let newer_in_sisyphus = get_newer_in_sisyphus(&sisyphus_packages, &p10_packages);
+    let target_exclusive = extract_exclusive(&target_packages, &secondary_packages);
+    let secondary_exclusive = extract_exclusive(&secondary_packages, &target_packages);
+    let newer_in_target = get_newer_in_target(&target_packages, &secondary_packages);
 
     info!("Producing output...");
     let json_output = json!({
-        "p10_exclusive": p10_exclusive,
-        "sisyphus_exclusive": sisyphus_exclusive,
-        "newer_in_sisyphus": newer_in_sisyphus
+        "target_exclusive": target_exclusive,
+        "secondary_exclusive": secondary_exclusive,
+        "newer_in_target": newer_in_target
     });
     to_writer_pretty(std::io::stdout(), &json_output).context("Failed to produce output JSON")?;
 
@@ -148,9 +152,10 @@ async fn compare_branches_packages() -> Result<()> {
 
 #[tokio::main]
 async fn main() {
-    setup_logger();
+    let opts = Opts::from_args();
+    setup_logger(opts.verbose);
 
-    if let Err(err) = compare_branches_packages().await {
+    if let Err(err) = compare_branches_packages(&opts.target_branch, &opts.secondary_branch).await {
         error!("{:#}", err);
         std::process::exit(1);
     }

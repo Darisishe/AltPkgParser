@@ -8,9 +8,9 @@ pub struct BranchExclusivePkgs {
     pub packages: Vec<PkgEntry>,
 }
 
-/// Describes output format of packages that are more recent in sisyphus
+/// Describes output format of packages that are more recent in Target branch
 #[derive(Serialize)]
-pub struct NewerInSisyphusPkgs {
+pub struct NewerInTargetPkgs {
     pub arch: Architecture,
     pub packages: Vec<VersionedPkg>,
 }
@@ -21,6 +21,6 @@ pub struct VersionedPkg {
     pub name: String,
 
     // uses "e:v-r" format
-    pub sisyphus_rpm_version: String,
-    pub p10_rpm_version: String,
+    pub target_rpm_version: String,
+    pub secondary_rpm_version: String,
 }
