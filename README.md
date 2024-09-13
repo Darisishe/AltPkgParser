@@ -12,7 +12,7 @@ Example: `cargo run -- -vvv > output.json` will run the program with max verbosi
 
 Branch name can be picked from [`p9`, `p10`, `p11`, `sisyphus`].
 
-Example: `cargo run -- -t p9 -s sisyphus -a noarch > output.json` - run silently, with `p9` as Target and `sisyphus` as Secondary, for `noarch` arch.
+Example: `cargo run -- -s p9 -t sisyphus -a noarch > output.json` - run silently, with `p9` as Target and `sisyphus` as Secondary, for `noarch` arch.
 
 ## Output JSON format
 CLI compares lists of `Target` and `Secondary` packages (if `-arch` provided, program only looks for packages for this architecture):
